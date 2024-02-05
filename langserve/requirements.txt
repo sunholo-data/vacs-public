@@ -1,0 +1,10 @@
+beautifulsoup4
+langchain
+langserve
+langchain-cli
+uvicorn
+google-cloud-storage 
+sunholo>=0.12.0
+openai
+tiktoken
+pydantic==1.10.13

@@ -1,0 +1,88 @@
+substitutions:
+  _SERVICE_NAME: langserve
+  _BUILD_FOLDER: application/qna/langserve
+  _IMAGE_NAME: terraform_managed
+  _REGION: terraform_managed
+  _ARTIFACT_REGISTRY_REPO_URL: terraform_managed
+  _GCS_BUCKET: terraform_managed
+  _CONFIG_FOLDER: terraform_managed
+  _PROJECT_ID: terraform_managed
+  _LANCEDB_BUCKET: terraform_managed
+
+tags: ['${_PROJECT_ID}', '${_SERVICE_NAME}']
+
+options:
+  logging: GCS_ONLY
+logsBucket: gs://multivac-deploy-logging-bucket
+
+steps:
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: download config folder
+    dir: ${_BUILD_FOLDER}
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      mkdir -p config &&
+      gsutil cp -r ${_GCS_BUCKET}/${_CONFIG_FOLDER}${BRANCH_NAME}/* ${_CONFIG_FOLDER} &&
+      ls ${_CONFIG_FOLDER}
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    dir: ${_BUILD_FOLDER}
+    args:
+    - '-c'
+    - |
+      cat <<EOF >Dockerfile_cloudrun
+      FROM ${_ARTIFACT_REGISTRY_REPO_URL}/prebuild/${_IMAGE_NAME}
+
+      COPY . .
+
+      EXPOSE 8080
+
+      RUN pip install langchain-cli
+
+      # Loop through each subdirectory in packages/ and install the package
+      RUN for d in packages/*; do if [ -d "\$d" ]; then pip install -e "\$d"; fi; done
+
+      RUN pip install --upgrade sunholo
+
+      RUN pip list && python --version
+
+      ENV LANCEDB_BUCKET=${_LANCEDB_BUCKET}
+
+      CMD exec uvicorn --port \$$PORT --host 0.0.0.0 app.server:app
+      EOF
+
+  - name: 'gcr.io/cloud-builders/docker'
+    dir: ${_BUILD_FOLDER}
+    args: ['build', '-t', '${_ARTIFACT_REGISTRY_REPO_URL}/${_IMAGE_NAME}/${_SERVICE_NAME}', '-f', 'Dockerfile_cloudrun', '.', '--network=cloudbuild']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    dir: ${_BUILD_FOLDER}
+    args: ['push', '${_ARTIFACT_REGISTRY_REPO_URL}/${_IMAGE_NAME}/${_SERVICE_NAME}']
+
+  # Deploy the image to Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: deploy cloud run
+    entrypoint: bash
+    dir: ${_BUILD_FOLDER}
+    args:
+      - "-c"
+      - |
+        gcloud run deploy ${_SERVICE_NAME} --image ${_ARTIFACT_REGISTRY_REPO_URL}/${_IMAGE_NAME}/${_SERVICE_NAME} \
+           --region ${_REGION} \
+           --project ${_PROJECT_ID} \
+           --platform managed \
+           --allow-unauthenticated \
+           --memory 2Gi \
+           --cpu 1 \
+           --max-instances 3 \
+           --update-secrets=OPENAI_API_KEY=OPENAI_API_KEY:latest \
+           --update-secrets=LANGCHAIN_API_KEY=LANGCHAIN_API_KEY:latest \
+           --update-secrets=TAVILY_API_KEY=TAVILY_API_KEY:latest \
+           --update-secrets=SUPABASE_URL=SUPABASE_URL:latest \
+           --update-secrets=SUPABASE_KEY=SUPABASE_KEY:latest \
+           --update-secrets=DB_CONNECTION_STRING=DB_CONNECTION_STRING:latest \
+           --update-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest \
+           --session-affinity 
+

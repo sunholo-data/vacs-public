@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "rag_lance"
+version = "0.0.1"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.325"
+openai = "^0.28.1"
+lancedb = ">=0.5.1"
+sunholo  = ">=0.13.2"
+pandas   = ">2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "rag_lance.chain"
+export_attr = "chain"
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"
