@@ -4,7 +4,7 @@ webapp/.env
 *.pyc
 
 # Segmentation use-cases
-langserve/packages/bq-agent/bq_agent/dev
+# langserve/packages/bq-agent/bq_agent/dev
 
 # Original agent.py
 langserve/packages/bq-agent/bq_agent/agent_original.py
