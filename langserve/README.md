@@ -43,6 +43,12 @@ export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
+## Setup ENV vars for VACs
+
+If the VACs need env vars, also make sure they are available in your local environment if running locally e.g. `export OPENAI_API_KEY=<your-api-key>`
+
+For Gemini Vertex VACs, ensure you are logged in with `gcloud auth` to the project you are calling for APIs etc.
+
 ## Launch LangServe
 
 ```bash
@@ -59,7 +65,7 @@ gcloud run services proxy langserve --region=europe-west1
 
 Can then view at `http://localhost:8080/docs`
 
-### Multivac URL
+### Multivac cURL
 
 ```bash
 curl http://localhost:8080/pirate_speak/invoke \
