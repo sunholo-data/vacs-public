@@ -10,25 +10,26 @@ pip install -U langchain-cli
 
 ## Adding packages
 
-```bash
-# adding packages from 
-# https://github.com/langchain-ai/langchain/tree/master/templates
-langchain app add $PROJECT_NAME
-
-# adding custom GitHub repo packages
-langchain app add --repo $OWNER/$REPO
-# or with whole git string (supports other git providers):
-# langchain app add git+https://github.com/hwchase17/chain-of-verification
-
-# with a custom api mount point (defaults to `/{package_name}`)
-langchain app add $PROJECT_NAME --api_path=/my/custom/path/rag
-```
-
-Note: you remove packages by their api path
+Install the packages within `packages` directory
 
 ```bash
-langchain app remove my/custom/path/rag
+for d in packages/*; do 
+    if [ -d "$d" ]; then 
+        echo "Processing directory: $d"  # Add this line
+        pip install -e "$d" 
+    fi; 
+done
 ```
+
+Symlink the config folder:
+
+From the `langserve` folder:
+
+```bash
+ln -s ../config config
+```
+
+
 
 ## Setup LangSmith (Optional)
 LangSmith will help us trace, monitor and debug LangChain applications. 
