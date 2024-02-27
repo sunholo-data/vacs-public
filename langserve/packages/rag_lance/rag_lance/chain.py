@@ -25,10 +25,17 @@ retriever = MultiQueryRetriever.from_llm(
     retriever=vectorstore.as_retriever(), llm=model
 )
 
-template = """Answer the question based only on the following context.:
+template = """Answer the question based only on the following context:
+# Context
 {context}
+# End Context
 
-If the context does not help if not relevant to the question, answer "I can't help with your question, it doesn't seem related to my memory."
+# Chat Summary
+{chat_summary}
+# Chat History
+{chat_history}
+
+If the context or chat history does not help if not relevant to the question, answer "I can't help with your question, it doesn't seem related to my memory."
 
 Question: {question}
 Your Answer (only if relevant to the question, say "I can't help with your question" otherwise):
@@ -49,12 +56,12 @@ class ChatEntry(BaseModel):
     content: str
 
 def load_chat_history(input_dict):
-    print(f"Got chat history for summary: {input_dict} {type(input_dict)}")
+    log.debug(f"Got chat history for summary: {type(input_dict)}")
     chat_history_dict = input_dict.get('chat_history')
     str = ""
     if chat_history_dict:
         for history in chat_history_dict:
-            print(f"Reading chat_entry: {history} {type(history)}")
+            log.debug(f"Reading chat_entry: {history} {type(history)}")
             if history.name.lower() == "human":
                 str += f"Human: {history.content}\n"
             elif history.name.lower() == "ai":
@@ -63,7 +70,7 @@ def load_chat_history(input_dict):
                 log.warning(f"Got unknown history.name: {history.name} {history.content}")
                 str += f"{history.name} {history.content}\n"
 
-    print(f"Got chat history:\n {str}")
+    log.debug(f"Got chat history:\n {str}")
     return str 
    
 def format_chat_history(chat_history):
@@ -82,7 +89,9 @@ def format_chat_summary(input_dict):
 
 summary_branch = RunnableBranch(
     (lambda x: "No summary" in x, RunnablePassthrough()),
-    summary_prompt | model | StrOutputParser()
+    (RunnableLambda(
+        lambda x:{"chat_history": x}) | summary_prompt | model | StrOutputParser()
+        )
 ).with_config(run_name="BranchSummary")
 
 _inputs = RunnableParallel({
@@ -93,6 +102,7 @@ _inputs = RunnableParallel({
     }).with_config(run_name="Inputs")
 
 chain = _inputs | prompt | model | StrOutputParser()
+
 
 
 class Question(BaseModel):
