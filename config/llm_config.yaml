@@ -8,6 +8,7 @@ pirate_speak:
 csv_agent:
   llm: openai
   agent: langserve
+  #agent_url: you can specify manually your URL endpoint here, or on Multivac it will be populated automatically
   display_name: Titanic
   tags: ["free"]
   avatar_url: https://avatars.githubusercontent.com/u/126733545?s=48&v=4

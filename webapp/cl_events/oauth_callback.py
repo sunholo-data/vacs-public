@@ -21,6 +21,20 @@ def find_user_group(raw_user_data: Dict[str, str]):
             return group
     return None
 
+def process_raw_user_data(raw_user_data, provider_id):
+      metadata={
+          "role": "",
+          "provider": provider_id,
+          "tags": [],
+          "picture_url": raw_user_data.get("picture") or raw_user_data.get("avatar_url"),
+          "image": raw_user_data.get("image") or raw_user_data.get("picture"),
+          "hd": raw_user_data.get("hd"),
+          "locale": raw_user_data.get("locale"),
+          "email": raw_user_data.get("email") or raw_user_data.get("emails")[0].get("email")
+      }
+
+      return metadata
+
 def oauth_callback_logic(
   provider_id: str,
   token: str,
@@ -28,10 +42,11 @@ def oauth_callback_logic(
   default_user: cl.User,
 ) -> Optional[cl.User]:
   log.info(f"OAuth Login attempt: {raw_user_data}")
-  user_group = find_user_group(raw_user_data)
-  identifier_user = str(generate_uuid_from_object_id(raw_user_data["email"]))
+  processed_user_data = process_raw_user_data(raw_user_data, provider_id)
+  user_group = find_user_group(processed_user_data)
+  identifier_user = str(generate_uuid_from_object_id(processed_user_data["email"]))
   if user_group:
-      group_id = user_group.get('name', raw_user_data["name"])
+      group_id = user_group.get('name', processed_user_data["name"])
       identifier = f"{group_id}-{identifier_user}"
       role = user_group['role']
       tags = user_group['tags']
@@ -43,18 +58,12 @@ def oauth_callback_logic(
       role = user_group['role']
       tags = user_group['tags']
 
+  processed_user_data["role"] = role
+  processed_user_data["tags"] = tags
+
   return cl.User(
       identifier=identifier, 
-      metadata={
-          "role": role,
-          "provider": provider_id,
-          "tags": tags,
-          "picture_url": raw_user_data.get("picture"),
-          "image": raw_user_data.get("image") or raw_user_data.get("picture"),
-          "hd": raw_user_data.get("hd"),
-          "locale": raw_user_data.get("locale"),
-          "email": raw_user_data["email"]
-      }
+      metadata=processed_user_data
   )
 
 
@@ -67,3 +76,21 @@ def oauth_callback_logic(
 # 'picture': 'https://lh3.googleusercontent.com/a/ACg8ocLpnFjQyMEZVPs_1ulSzj3kiQFDnP1N8uLTFEX4UfjIKJA=s96-c', 
 # 'locale': 'en', 
 # 'hd': 'sunholo.com'}
+
+# github
+# OAuth Login attempt: 
+#{'login': 'blah', 
+# 'id': 1123, 
+# 'node_id': 'MDxxxxx', 
+# 'avatar_url': 'https://avatars.githubusercontent.com/u/12622760?v=4', 
+# 'gravatar_id': '', 
+#'type': 'User', 
+#'site_admin': False, 
+#'name': 'Bill', 
+#'company': None, 
+#'blog': '', 'location': None, 'email': None, 'hireable': None, 
+#'bio': None, 'twitter_username': None, 'public_repos': 19, 
+#'public_gists': 0, 'followers': 0, 'following': 5, 
+#'created_at': '2015-05-27T07:15:39Z', 'updated_at': '2024-05-03T08:05:54Z', 
+#'emails': [{'email': 'demo@users.noreply.github.com', 'primary': False, 'verified': True, 'visibility': None}, 
+# {'email': 'email@go.com', 'primary': True, 'verified': True, 'visibility': 'public'}]}
