@@ -89,6 +89,12 @@ async def main_logic(message: cl.Message):
             private_docs=private_docs,
             whole_document=whole_document,
             source_filters_and_or=source_filters_and_or,
+            # langchain configurable dictionary
+            configurable={
+                # if user role matches vector_name
+                "role": app_user.metadata["role"],
+                "vector_name": config["name"],
+            },
             # kwargs for session tracking
             user_id=app_user.identifier,
             session_id=message.thread_id,
