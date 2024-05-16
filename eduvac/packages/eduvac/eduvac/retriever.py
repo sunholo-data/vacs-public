@@ -26,7 +26,6 @@ async def get_retriever(x: dict) -> dict:
 
     documents = []
     try:
-        #TODO: add more doc stores, only AlloyDB at the moment
         documents = await get_sources_from_docstore_async(source_filters, vector_name=VECTOR_NAME, search_type=search_type)
     except Exception as err:
         log.warning(f"Only private_docs=True available. No documents could be import from a Docstore: {str(err)}")

@@ -13,7 +13,7 @@ def format_docs(x: dict):
     docs = x["metadata"]
     chat_history = x["chat_history"]
 
-    formatted_docstring = []
+    formatted_docstring_list = []
     char_count = 0
     for doc in docs:
         metadata_fields = ['source', 'eventTime', 'objectId', 'images_gsurls']
@@ -33,31 +33,57 @@ def format_docs(x: dict):
         char_count += len(doc_content)
         
         formatted_doc = f"# {doc_source}\n## {doc_objectId}\n{doc_eventTime}\n\n{doc_content}\n\n#### metadata\n{doc_metadatas_parsed}"
-        formatted_docstring.append(formatted_doc)
+        formatted_docstring_list.append(formatted_doc)
 
     log.info(f"Found [{len(docs)}] documents to use in context with total character count: [{char_count}]")
     if char_count > TOKEN_INPUT_LIMIT:
         log.warning(f"char_count [{char_count}] of returned docs to context greater than TOKEN_INPUT_LIMIT [{TOKEN_INPUT_LIMIT}] - loss of context")
         summarised_docs = summarise_knowing_question(
-            docs=formatted_docstring, 
+            docs=formatted_docstring_list, 
             question=x["question"],
             n_chunks=10,
             chat_history=chat_history)
         if len(summarised_docs) > 0:
-            formatted_docstring = summarised_docs
+            formatted_docstring_list = [summarised_docs]
     elif char_count < TOKEN_INPUT_LIMIT + 2000:
         summary_context = summarise_knowing_question(
-            docs=formatted_docstring, 
+            docs=formatted_docstring_list, 
             question=x["question"], 
             n_chunks=1,
             chat_history=chat_history)
         if len(summary_context) > 0:
-            formatted_docstring.extend(summary_context)
+            formatted_docstring_list.extend(summary_context)
         
-    return "\n\n".join(formatted_docstring)[:TOKEN_INPUT_LIMIT]
+    return "\n\n".join(formatted_docstring_list)[:TOKEN_INPUT_LIMIT]
 
-def summarise_knowing_question(docs: list[str], question: str, n_chunks: int =10, chat_history =[]):
+def add_summaries_to_docstring(docs, char_count, question, chat_history):
 
+    BUFFER = 2000
+
+    if char_count > TOKEN_INPUT_LIMIT:
+        log.warning(f"char_count [{char_count}] of returned docs to context greater than TOKEN_INPUT_LIMIT [{TOKEN_INPUT_LIMIT}] - loss of context")
+        summarised_docs = summarise_knowing_question(
+            docs=docs, 
+            question=question,
+            n_chunks=10,
+            chat_history=chat_history)
+        if len(summarised_docs) > 0:
+            return summarised_docs
+        else:
+            return docs
+    elif char_count < TOKEN_INPUT_LIMIT + BUFFER:
+        log.info("Summariseing knowing question now")
+        summary_context = summarise_knowing_question(
+            docs=docs, 
+            question=question, 
+            n_chunks=1,
+            chat_history=chat_history)
+        if len(summary_context) > 0:
+            return docs.extend(summary_context)
+
+def summarise_knowing_question(docs: list[str], question: str, n_chunks: int =10, chat_history:str = ""):
+
+    log.debug(f"summarise_knowing_question: docs: {type(docs)} chat_history: {type(chat_history)}")
     long_text = "\n\n".join(docs)
 
     summary_chain = summary_question_prompt | quick_model | StrOutputParser()

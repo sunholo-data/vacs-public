@@ -32,6 +32,7 @@ app.add_middleware(
 
 # the path marries up to the {vector_name} e.g. vector_name=pirate_speak
 add_routes(app, eduvac_chain, path="/eduvac",
+           config_keys=["configurable"],
            per_req_config_modifier=add_langfuse_tracing)
 
 if __name__ == "__main__":
