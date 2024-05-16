@@ -2,6 +2,8 @@
 
 Open source code for the EduVAC private VAC on https://multivac.sunholo.com
 
+See https://dev.sunholo.com/docs/VACs/eduvac for more details.
+
 
 ## Local Testing
  
