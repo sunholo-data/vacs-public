@@ -47,10 +47,6 @@ def vac_stream(question: str, vector_name, chat_history=[], callback=None, **kwa
         except ValueError as err:
             callback.on_llm_new_token(token=str(err))
     
-    full_response = next(response, None) 
-
-    callback.on_llm_end(response=full_response)
-    log.info(f"rag_model.response: {full_response}")
 
     rag_response = metadata.get("rag_response").text if metadata.get("rag_response") else None
     search_response = metadata.get("search_response").text if metadata.get("search_response") else None
