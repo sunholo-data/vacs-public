@@ -1,6 +1,6 @@
 # Vertex GenAI
 
-This is a demo of using VertexAI grounding with Google Search as well as LlamaIndex RAG within a Vertex AI chat bot.
+This is a demo of using [VertexAI grounding with Google Search](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/ground-gemini#ground-gemini-web-python_vertex_ai_sdk) as well as [LlamaIndex RAG within a Vertex AI](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/rag-api) chat bot.
 
 See more documentation at https://dev.sunholo.com/docs/VACs/vertex-llamaindex/
 
