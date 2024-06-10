@@ -1,0 +1,2 @@
+sunholo[gcp,http]>=0.62.15
+gunicorn
